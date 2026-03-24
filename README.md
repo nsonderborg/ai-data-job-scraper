@@ -159,8 +159,11 @@ Create a Notion database with these properties:
 # Make sure Ollama is running with the model loaded
 ollama pull llama3.2
 
-# Run the scraper
+# Full run — scrape, filter, score, write to Notion
 python main.py
+
+# Dry run — scrape, filter, score, print results (no Notion write)
+python main.py --dry-run
 ```
 
 ## Project Structure

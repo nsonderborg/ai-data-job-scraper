@@ -9,9 +9,11 @@ Pipeline per run:
   6. Log summary
 
 Usage:
-  python main.py
+  python main.py              # full run — scrape, filter, score, write to Notion
+  python main.py --dry-run    # scrape, filter, score, print results (no Notion write)
 """
 
+import argparse
 import re
 import sys
 import time
@@ -20,7 +22,6 @@ from config.logging_config import get_logger
 from scrapers import JobPosting
 from scrapers.filters import apply_all
 from scoring.relevancy import score_postings
-from notiondb.writer import write_jobs
 
 # Scrapers
 from scrapers import jobindex, pensionsjobs, politi, forsvaret
@@ -65,10 +66,10 @@ _SCRAPERS: list[tuple[str, object]] = [
 ]
 
 
-def main() -> None:
+def main(dry_run: bool = False) -> None:
     start = time.monotonic()
     logger.info("=" * 60)
-    logger.info("AI & Data Job Scraper run starting")
+    logger.info("AI & Data Job Scraper run starting%s", " (DRY RUN)" if dry_run else "")
 
     # 1. Run all scrapers
     raw: list[JobPosting] = []
@@ -114,8 +115,19 @@ def main() -> None:
 
     high_score_count = sum(1 for p in unique if p.relevancy_score >= 4)
 
-    # 5. Write to Notion
-    written, skipped = write_jobs(unique)
+    # 5. Write to Notion (or print in dry-run mode)
+    if dry_run:
+        written, skipped = 0, 0
+        logger.info("-" * 60)
+        logger.info("DRY RUN — %d postings would be written to Notion:", len(unique))
+        for p in sorted(unique, key=lambda x: x.relevancy_score, reverse=True):
+            logger.info(
+                "  [%d] %s @ %s — %s | %s",
+                p.relevancy_score, p.title, p.company, p.source, p.match_reason,
+            )
+    else:
+        from notiondb.writer import write_jobs
+        written, skipped = write_jobs(unique)
 
     # 6. Summary
     elapsed = time.monotonic() - start
@@ -133,8 +145,16 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="AI & Data Job Scraper")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Scrape, filter, and score but don't write to Notion — print results instead",
+    )
+    args = parser.parse_args()
+
     try:
-        main()
+        main(dry_run=args.dry_run)
     except KeyboardInterrupt:
         logger.info("Interrupted by user")
         sys.exit(0)
