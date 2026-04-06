@@ -2,7 +2,7 @@
 
 Automated job pipeline that scrapes **8 Danish job sources** daily, filters for AI/ML and data roles in Greater Copenhagen, scores each posting with a local LLM, and writes results to a Notion database.
 
-Built to solve a real problem: staying on top of the fast-moving AI & data job market across fragmented Danish job boards, startup platforms, and VC career pages — without manually checking each site every day.
+Built to solve a real problem: staying on top of the fast-moving AI & data job market across fragmented Danish job boards, startup platforms, and VC career pages without manually checking each site every day.
 
 ## How It Works
 
